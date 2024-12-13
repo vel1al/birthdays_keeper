@@ -1,81 +1,86 @@
-"""
-[r] - required, [o] - optional
-
-birthdays.json:
--dates:
-    -date -> datetime:
-        -birthday_id -> uuid [r]            -birthday date
--birthdays:
-    -birthday_id -> uuid:
-        -birthday_name -> str [r]                -name of event
-        -beep_intervals -> enum [o]              -interval of remind events
-        -b_is_beep_required -> bool [r]          -is reminding required
-        -b_is_beep_to_group_required -> bool [o] -reminding chat id
-        -b_is_chat_event -> bool [r]             -is birthday target is group chat
-        -congrats_target_chat -> str [o]         -congratulations target chat id
-        -congrats_target_user_id -> str [o]      -congratulations target user id
-        -congrats_message -> str [o]             -congratulations message
--group_chats:
-    -chat_id -> str:
-        -user_list -> list:
-            -user_id -> str [r]
--users_list
-    -user_id -> str:
-        -owning_birthday_id -> uuid [r]
-
-locals:
--local_name -> str:
-    -local_str -> str [r]
-"""
-
 from abc import ABCMeta, abstractmethod
+from datetime import datetime
+from structs import Birthday, User, GroupChat
 
 class IDataTable:
     __metaclass__ = ABCMeta
 
     @classmethod
     @abstractmethod
-    async def write_changes(self):
+    async def stable_changes(self) -> None:
         pass
 
     @classmethod
     @abstractmethod
-    def get_users(self):
+    def b_is_user_in_table(self, user_id: str) -> bool:
         pass
     @classmethod
     @abstractmethod
-    def get_birthdays_by_id(self, target_birthday):
-        pass
-    @classmethod
-    @abstractmethod
-    def get_birthday_by_date(self, target_date):
-        pass
-    @classmethod
-    @abstractmethod
-    def get_local(self, target_local):
-        pass
-    @classmethod
-    @abstractmethod
-    def get_chats(self):
-        pass
-    @classmethod
-    @abstractmethod
-    def get_chat_by_id(self, target_chat):
+    def b_is_chat_in_table(self, chat_id: str) -> bool:
         pass
 
     @classmethod
     @abstractmethod
-    def add_new_user(self, target_user):
+    def get_user(self, user_id: str) -> User:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def get_birthdays_by_id(self, birthday_id: str) -> Birthday:
         pass
     @classmethod
     @abstractmethod
-    def add_new_chat(self, chat_id, chat_info):
+    def get_birthday_by_date(self, date: datetime) -> dict[str, Birthday]:
         pass
     @classmethod
     @abstractmethod
-    def add_birthday(self, birthday, birthday_owner, date):
+    def get_birthday_owner(self, birthday_id: str) -> User:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def get_chat_by_id(self, chat_id) -> GroupChat:
         pass
     @classmethod
     @abstractmethod
-    def remove_birthday(self, target_birthday, birthday_owner):
+    def get_chat_id_by_user_id(self, user_id) -> str:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def get_local(self, local, language) -> str:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def add_new_user(self, user_id: str, user: User) -> None:
+        pass
+    @classmethod
+    @abstractmethod
+    def add_new_chat(self, chat_id, chat: GroupChat) -> None:
+        pass
+    @classmethod
+    @abstractmethod
+    def add_birthday(self, owner_id: str, birthday_id, birthday: Birthday) -> None:
+        pass
+    @classmethod
+    @abstractmethod
+    def remove_birthday(self, birthday_id: str) -> None:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def adjust_birthday_field(self, birthday_id: str, field: str, value) -> None:
+        pass
+    @classmethod
+    @abstractmethod
+    def adjust_user_field(self, user_id: str, field: str, value) -> None:
+        pass
+    @classmethod
+    @abstractmethod
+    def rewrite_birthday(self, birthday_id: str, birthday: Birthday) -> None:
+        pass
+    @classmethod
+    @abstractmethod
+    def rewrite_user(self, user_id: str, user: User) -> None:
         pass
