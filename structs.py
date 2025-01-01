@@ -1,7 +1,7 @@
 from datetime import datetime
 from abc import ABCMeta, abstractmethod
 import enum
-
+from typing import Any, Optional
 
 """
 [r] - required, [o] - optional
@@ -39,11 +39,30 @@ locals:
         -local_str -> str [r]
 """
 
+
+class CollectingFieldsState:
+    invalid: str = "f_invalid"
+    initial: str = "f_initial"
+    done: str = "f_done"
+    name: str = 'f_name'
+    date: str = 'f_date'
+    beep_interval: str = 'f_beep_interval'
+    beep: str = 'f_b_is_beep_required'
+    beep_to_group: str = 'f_b_is_beep_to_group_required'
+    congrats_required: str = 'f_b_is_congrats_required'
+    is_chat_event : str= 'f_b_is_chat_event'
+    target_chat: str = 'f_target_chat'
+    congrats_target_user_id: str = 'f_congrats_target_user_id'
+    congrats_msg: str = 'f_congrats_message'
+
+
+
 class BeepInterval(enum.Enum):
     none = 0,
     day = 1,
     week = 2,
     month = 3
+
 
 class BirthdayState(enum.Enum):
     valid = 0,
@@ -52,6 +71,7 @@ class BirthdayState(enum.Enum):
     invalid_date = 3,
     invalid_group_chat = 4,
     invalid_type = 5
+
 
 class DefaultField:
     __metaclass__ = ABCMeta
@@ -65,13 +85,16 @@ class DefaultField:
             if hasattr(self, attr):
                 setattr(self, attr, data)
 
+
 class User(DefaultField):
     def __init__(self, values: dict = None):
         self.owning_birthdays_id: list[str] = []
         self.chat_id: str = None
+        self.name: str = None
 
         if values:
             super().__init__(values)
+
 
 class GroupChat(DefaultField):
     def __init__(self, values: dict = None):
@@ -80,6 +103,7 @@ class GroupChat(DefaultField):
 
         if values:
             super().__init__(values)
+
 
 class Birthday(DefaultField):
     def __init__(self, values: dict = None):
@@ -98,18 +122,10 @@ class Birthday(DefaultField):
             self.deserialize(values)
 
     def deserialize(self, values: dict) -> None:
-        for attr, data in values.items():
+        for attr, value in values.items():
             attr = str(attr)
             if hasattr(self, attr):
-                if attr == 'date':
-                    try:
-                        self.date = datetime.fromisoformat(data).date()
-                    except ValueError:
-                        self.date = None
-                    except TypeError:
-                        self.date = None
-                else:
-                    setattr(self, attr, data)
+                setattr(self, attr, value)
 
         self.validate_fields()
 
