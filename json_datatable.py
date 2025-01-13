@@ -106,24 +106,26 @@ class JsonDataTable(IDataTable):
         self.read_locals()
         self.read_settings()
 
-    def b_is_user_in_table(self, user_id: str) -> bool:
-        return user_id in self._table['users_list']
+    def write_changes(self, func):
+        async def wrapper():
+            output = await func()
+            with open(self._json_path + self._table_file, 'w') as ostream:
+                json.dump(self._table, ostream, cls=StructsEncoder)
+            return output
+        return wrapper
 
-    def b_is_chat_in_table(self, chat_id: str) -> bool:
-        return chat_id in self._table['group_chats']
-
-    async def get_setting(self, target_setting: str) -> Any:
+    def get_setting(self, target_setting: str, hard_def: Any) -> Any:
         if target_setting in self._settings:
             return self._settings[target_setting]
 
-        return None
+        return hard_def
 
     def get_user(self, user_id: str) -> User:
         return self._table['users_list'].get(user_id, None)
 
     def get_chats_containing_user(self, user_id: str) -> dict[str, GroupChat]:
         output = {}
-        for chat_id, chat in self._table['group_chats']:
+        for chat_id, chat in self._table['group_chats'].items():
             if user_id in chat.users_list:
                 output[chat_id] = chat
 
@@ -139,10 +141,6 @@ class JsonDataTable(IDataTable):
         if user:
             return user.chat_id
         return None
-
-    async def stable_changes(self) -> None:
-        with open(self._json_path + self._table_file, 'w') as ostream:
-            json.dump(self._table, ostream, cls=StructsEncoder)
 
     def get_birthday_by_id(self, birthday_id: str) -> Birthday:
         return self._table['birthdays'].get(birthday_id, None)
@@ -200,15 +198,21 @@ class JsonDataTable(IDataTable):
 
         return self._locals[target_lang]['buttons']['invalid-state']
 
+    @write_changes
     def add_new_user(self, user_id: str, user: User) -> None:
         self._table['users_list'][user_id] = user
 
+    @write_changes
     def add_new_chat(self, chat_id: str, chat: GroupChat) -> None:
         self._table['group_chats'][chat_id] = chat
 
-    def add_user_to_chat(self, chat_id: str, user: User, user_id: str) -> bool:
+    @write_changes
+    def add_user_to_chat(self, chat_id: str, user_id: str, user: User = None) -> bool:
         if user_id not in self._table['users_list']:
-            self.add_new_user(user_id, user)
+            if user is not None:
+                self.add_new_user(user_id, user)
+            else:
+                return False
 
         chat = self.get_chat_by_id(chat_id)
         if chat is None:
@@ -216,6 +220,26 @@ class JsonDataTable(IDataTable):
 
         chat.users_list.append(user_id)
         return True
+
+    @write_changes
+    def add_birthday(self, owner_id: str, birthday_id: str, birthday: Birthday):
+        user = self.get_user(owner_id)
+        if user:
+            user.owning_birthdays_id.append(birthday_id)
+            self._table['birthdays'][birthday_id] = birthday
+            self.rewrite_user(owner_id, user)
+
+    @write_changes
+    def remove_birthday(self, birthday_id: str):
+        if birthday_id in self._table['birthdays']:
+            self._table['birthdays'].pop(birthday_id)
+
+        for user_id, user in self._table['users_list']:
+            if birthday_id in user.owning_birthdays_id:
+                self._table['users_list'][user_id].owning_birthdays.remove(birthday_id)
+                break
+
+    @write_changes
     def remove_user_from_chat(self, chat_id: str, user_id: str) -> None:
         chat = self.get_chat_by_id(chat_id)
         if chat is None:
@@ -225,6 +249,31 @@ class JsonDataTable(IDataTable):
             chat.users_list.remove(user_id)
         if user_id in chat.admins_id:
             chat.admins_id.remove(user_id)
+
+    @write_changes
+    def adjust_birthday_field(self, birthday_id: str, field: str, value) -> None:
+        birthday = self.get_birthday_by_id(birthday_id)
+        if birthday:
+            if hasattr(birthday, field):
+                setattr(birthday, field, value)
+
+    @write_changes
+    def adjust_user_field(self, user_id: str, field: str, value) -> None:
+        user = self.get_user(user_id)
+        if user:
+            if hasattr(user, field):
+                setattr(user, field, value)
+
+    @write_changes
+    def rewrite_birthday(self, birthday_id: str, birthday: Birthday) -> None:
+        if birthday_id in self._table['birthdays']:
+            self._table['birthdays'][birthday_id] = birthday
+
+    @write_changes
+    def rewrite_user(self, user_id: str, user: User) -> None:
+        self.add_new_user(user_id, user)
+
+    @write_changes
     def change_user_chat_status(self, chat_id: str, user_id: str, b_is_admin: bool) -> None:
         chat = self.get_chat_by_id(chat_id)
         if chat is None:
@@ -236,38 +285,3 @@ class JsonDataTable(IDataTable):
             chat.admins_id.append(user_id)
         elif  user_id in chat.admins_id:
             chat.admins_id.remove(user_id)
-
-    def add_birthday(self, owner_id: str, birthday_id: str, birthday: Birthday):
-        user = self.get_user(owner_id)
-        if user:
-            user.owning_birthdays_id.append(birthday_id)
-            self._table['birthdays'][birthday_id] = birthday
-            self.rewrite_user(owner_id, user)
-
-    def remove_birthday(self, birthday_id: str):
-        if birthday_id in self._table['birthdays']:
-            self._table['birthdays'].pop(birthday_id)
-
-        for user_id, user in self._table['users_list']:
-            if birthday_id in user.owning_birthdays_id:
-                self._table['users_list'][user_id].owning_birthdays.remove(birthday_id)
-                break
-
-    def adjust_birthday_field(self, birthday_id: str, field: str, value) -> None:
-        birthday = self.get_birthday_by_id(birthday_id)
-        if birthday:
-            if hasattr(birthday, field):
-                setattr(birthday, field, value)
-
-    def adjust_user_field(self, user_id: str, field: str, value) -> None:
-        user = self.get_user(user_id)
-        if user:
-            if hasattr(user, field):
-                setattr(user, field, value)
-
-    def rewrite_birthday(self, birthday_id: str, birthday: Birthday) -> None:
-        if birthday_id in self._table['birthdays']:
-            self._table['birthdays'][birthday_id] = birthday
-
-    def rewrite_user(self, user_id: str, user: User) -> None:
-        self.add_new_user(user_id, user)

@@ -1,51 +1,30 @@
 from abc import ABCMeta, abstractmethod
 from datetime import datetime
 from structs import Birthday, User, GroupChat
-from typing import Any
+from typing import Any, Optional
 
 class IDataTable:
     __metaclass__ = ABCMeta
 
     @classmethod
     @abstractmethod
-    async def get_setting(self, target_setting: str) -> Any:
-        pass
-
-    @classmethod
-    @abstractmethod
-    async def stable_changes(self) -> None:
-        pass
-
-    @classmethod
-    @abstractmethod
-    def b_is_user_in_table(self, user_id: str) -> bool:
+    def add_new_chat(self, chat_id, chat: GroupChat) -> None:
         pass
     @classmethod
     @abstractmethod
-    def b_is_chat_in_table(self, chat_id: str) -> bool:
-        pass
-
-    @classmethod
-    @abstractmethod
-    def get_user(self, user_id: str) -> User:
-        pass
-
-    @classmethod
-    @abstractmethod
-    def get_birthdays_by_id(self, birthday_id: str) -> Birthday:
+    def add_user_to_chat(self, chat_id: str, user_id: str, user: User = None) -> bool:
         pass
     @classmethod
     @abstractmethod
-    def get_birthday_by_date(self, date: datetime) -> dict[str, Birthday]:
+    def remove_user_from_chat(self, chat_id: str, user_id: str) -> None:
         pass
     @classmethod
     @abstractmethod
-    def get_birthday_owner(self, birthday_id: str) -> User:
+    def change_user_chat_status(self, chat_id: str, user_id: str, b_is_admin: bool) -> None:
         pass
-
     @classmethod
     @abstractmethod
-    def get_chats_containing_user(self, user_id: str) -> list[GroupChat]:
+    def get_chats_containing_user(self, user_id: str) -> dict[str, GroupChat]:
         pass
     @classmethod
     @abstractmethod
@@ -68,6 +47,10 @@ class IDataTable:
     @abstractmethod
     def get_buttons_inline(self, button: str, language: str) -> [[(str, str)]]:
         pass
+    @classmethod
+    @abstractmethod
+    def get_setting(self, target_setting: str, hard_def: Any) -> Any:
+        pass
 
     @classmethod
     @abstractmethod
@@ -75,19 +58,15 @@ class IDataTable:
         pass
     @classmethod
     @abstractmethod
-    def add_new_chat(self, chat_id, chat: GroupChat) -> None:
+    def get_user(self, user_id: str) -> User:
         pass
     @classmethod
     @abstractmethod
-    def add_user_to_chat(self, chat_id: str, user: User, user_id: str) -> bool:
+    def adjust_user_field(self, user_id: str, field: str, value) -> None:
         pass
     @classmethod
     @abstractmethod
-    def remove_user_from_chat(self, chat_id: str, user_id: str) -> None:
-        pass
-    @classmethod
-    @abstractmethod
-    def change_user_chat_status(self, chat_id: str, user_id: str, b_is_admin: bool) -> None:
+    def rewrite_user(self, user_id: str, user: User) -> None:
         pass
 
     @classmethod
@@ -98,20 +77,23 @@ class IDataTable:
     @abstractmethod
     def remove_birthday(self, birthday_id: str) -> None:
         pass
-
-    @classmethod
-    @abstractmethod
-    def adjust_birthday_field(self, birthday_id: str, field: str, value) -> None:
-        pass
-    @classmethod
-    @abstractmethod
-    def adjust_user_field(self, user_id: str, field: str, value) -> None:
-        pass
     @classmethod
     @abstractmethod
     def rewrite_birthday(self, birthday_id: str, birthday: Birthday) -> None:
         pass
     @classmethod
     @abstractmethod
-    def rewrite_user(self, user_id: str, user: User) -> None:
+    def adjust_birthday_field(self, birthday_id: str, field: str, value) -> None:
+        pass
+    @classmethod
+    @abstractmethod
+    def get_birthdays_by_id(self, birthday_id: str) -> Birthday:
+        pass
+    @classmethod
+    @abstractmethod
+    def get_birthday_by_date(self, date: datetime) -> dict[str, Birthday]:
+        pass
+    @classmethod
+    @abstractmethod
+    def get_birthday_owner(self, birthday_id: str) -> User:
         pass

@@ -13,6 +13,7 @@
       "add-birthday-success": "added",
       "add-birthday-adjust": "choose field",
       "add-birthday-cancel": "canceled",
+      "chat-list-line-format": "chat: {0}",
       "get-name": "awaiting for name",
       "get-bool-value": "awaiting for yes/no",
       "get-date": "awaiting for date in iso (yyyy-mm-dd)",
@@ -47,16 +48,256 @@
       "main-conversation-loop": "choose your destiny"
     },
     "buttons": {
-      "start": [[{"text": "Add private Birthday", "callback": "sa_ab_p"}, {"text": "Add group Birthday", "callback": "sa_ab_g"}], [{"text": "Show Birthdays List", "callback": "sa_sbl"}]],
-      "add-birthday-ask-action": [[{"text": "Adjust", "callback": "ab_ac_adjust"}, {"text": "Confirm", "callback": "ab_ac_confirm"}, {"text": "Cancel", "callback": "ab_ac_cancel"}]],
-      "collect-field-base": [[{"text": "Name", "callback": "f_name"}, {"text": "Date", "callback": "f_date"}, {"text": "Beep to you?", "callback": "f_b_is_beep_required"}]],
-      "collect-field-beep-group": [[{"text": "Beep interval", "callback": "f_beep_interval"}, {"text": "Beep to group?", "callback": "f_b_is_beep_to_group_required"}]],
-      "collect-field-beep-chat": [[{"text": "Beep interval", "callback": "f_beep_interval"}]],
-      "collect-field-congrats": [[{"text": "Congrats?", "callback": "f_b_is_congrats_required"}]],
-      "collect-field-congrats-true": [[{"text": "Congrats?", "callback": "f_b_is_congrats_required"}, {"text": "Congrats message", "callback": "f_congrats_message"}, {"text": "Congrats user", "callback": "f_congrats_target_user_id"}]],
-      "collect-bool": [[{"text": "Yes", "callback": "collect_input_y"}, {"text": "No", "callback": "collect_input_n"}]],
-      "collect-beep": [[{"text": "Day", "callback": "collect_input_d"}, {"text": "Week", "callback": "collect_input_w"}, {"text": "Month", "callback": "collect_input_m"}]],
-      "validate-birthday": [[{"text": "Add", "callback": "avb_add"}, {"text": "Adjust", "callback": "avb_adjust"}, {"text": "Cancel", "callback": "avb_cancel"}]]
+      "start": [
+        [
+          {
+            "text": "Add private Birthday",
+            "callback": "sa_ab_p"
+          },
+          {
+            "text": "Add group Birthday",
+            "callback": "sa_ab_g"
+          }
+        ],
+        [
+          {
+            "text": "Show Birthdays List",
+            "callback": "sa_sbl"
+          }
+        ]
+      ],
+      "add-birthday-ask-action": [
+        [
+          {
+            "text": "Adjust",
+            "callback": "ab_ac_adjust"
+          },
+          {
+            "text": "Confirm",
+            "callback": "ab_ac_confirm"
+          },
+          {
+            "text": "Cancel",
+            "callback": "ab_ac_cancel"
+          }
+        ]
+      ],
+      "collect-field-base": [
+        [
+          {
+            "text": "Name",
+            "callback": "f_name"
+          },
+          {
+            "text": "Date",
+            "callback": "f_date"
+          },
+          {
+            "text": "Beep to you?",
+            "callback": "f_b_is_beep_required"
+          }
+        ]
+      ],
+      "collect-field-beep-group": [
+        [
+          {
+            "text": "Beep interval",
+            "callback": "f_beep_interval"
+          },
+          {
+            "text": "Beep to group?",
+            "callback": "f_b_is_beep_to_group_required"
+          }
+        ]
+      ],
+      "collect-field-beep-chat": [
+        [
+          {
+            "text": "Beep interval",
+            "callback": "f_beep_interval"
+          }
+        ]
+      ],
+      "collect-field-congrats": [
+        [
+          {
+            "text": "Congrats?",
+            "callback": "f_b_is_congrats_required"
+          }
+        ]
+      ],
+      "collect-field-congrats-true": [
+        [
+          {
+            "text": "Congrats?",
+            "callback": "f_b_is_congrats_required"
+          },
+          {
+            "text": "Congrats message",
+            "callback": "f_congrats_message"
+          },
+          {
+            "text": "Congrats user",
+            "callback": "f_congrats_target_user_id"
+          }
+        ]
+      ],
+      "collect-bool": [
+        [
+          {
+            "text": "Yes",
+            "callback": "collect_input_y"
+          },
+          {
+            "text": "No",
+            "callback": "collect_input_n"
+          }
+        ]
+      ],
+      "collect-beep": [
+        [
+          {
+            "text": "Day",
+            "callback": "collect_input_d"
+          },
+          {
+            "text": "Week",
+            "callback": "collect_input_w"
+          },
+          {
+            "text": "Month",
+            "callback": "collect_input_m"
+          }
+        ]
+      ],
+      "validate-birthday": [
+        [
+          {
+            "text": "Add",
+            "callback": "avb_add"
+          },
+          {
+            "text": "Adjust",
+            "callback": "avb_adjust"
+          },
+          {
+            "text": "Cancel",
+            "callback": "avb_cancel"
+          }
+        ]
+      ],
+      "show-chats-list": [
+        [
+          {
+            "text": "back",
+            "callback": "scl_back"
+          },
+          {
+            "text": "inspect",
+            "callback": "scl_inspect"
+          },
+          {
+            "text": "next",
+            "callback": "scl_next"
+          }
+        ],
+        [
+          {
+            "text": "cancel",
+            "callback": "back"
+          }
+        ],
+        [
+          {
+            "text": "select",
+            "callback": "scl_select"
+          }
+        ]
+      ],
+      "show-chats-list-one-page": [
+        [
+          {
+            "text": "inspect",
+            "callback": "scl_inspect"
+          }
+        ],
+        [
+          {
+            "text": "cancel",
+            "callback": "back"
+          }
+        ],
+        [
+          {
+            "text": "select",
+            "callback": "scl_select"
+          }
+        ]
+      ],
+      "show-chats-list-first-page": [
+        [
+          {
+            "text": "inspect",
+            "callback": "scl_inspect"
+          },
+          {
+            "text": "next",
+            "callback": "scl_next"
+          }
+        ],
+        [
+          {
+            "text": "cancel",
+            "callback": "back"
+          }
+        ],
+        [
+          {
+            "text": "select",
+            "callback": "scl_select"
+          }
+        ]
+      ],
+      "show-chats-list-last-page": [
+        [
+          {
+            "text": "back",
+            "callback": "scl_back"
+          },
+          {
+            "text": "inspect",
+            "callback": "scl_inspect"
+          }
+        ],
+        [
+          {
+            "text": "cancel",
+            "callback": "back"
+          }
+        ],
+        [
+          {
+            "text": "select",
+            "callback": "scl_select"
+          }
+        ]
+      ],
+      "inspect-chat": [
+        [
+          {
+            "text": "back",
+            "callback": "back"
+          }
+        ]
+      ],
+      "temp": [
+        [
+          {
+            "text": "show",
+            "callback": "scl_s"
+          }
+        ]
+      ]
     }
   },
   "default-lang": "en"

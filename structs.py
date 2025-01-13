@@ -56,7 +56,6 @@ class CollectingFieldsState:
     congrats_msg: str = 'f_congrats_message'
 
 
-
 class BeepInterval(enum.Enum):
     none = 0,
     day = 1,
@@ -100,6 +99,7 @@ class GroupChat(DefaultField):
     def __init__(self, values: dict = None):
         self.users_list: list[str] = []
         self.admins_id: list[str] = None
+        self.title: str = None
 
         if values:
             super().__init__(values)
