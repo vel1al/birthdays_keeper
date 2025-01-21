@@ -128,7 +128,7 @@ class JsonDataTable(IDataTable):
     def get_chats_containing_user(self, user_id: int) -> dict[int, GroupChat]:
         output = {}
         for chat_id, chat in self._table['group_chats'].items():
-            if str(user_id) in chat.users_list:
+            if user_id in chat.users_list:
                 output[int(chat_id)] = chat
 
         if output:

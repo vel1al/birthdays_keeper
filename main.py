@@ -1,4 +1,6 @@
 import datetime
+from datetime import timedelta
+
 import telegram
 import logging
 from tools import b_is_valid_group_chat, dict_to_inline_keyboard, validate_input, get_cutoff
@@ -110,37 +112,36 @@ class BirthdaysKeeper:
             else:
                 pass
 
-        if not b_is_valid_group_chat(update.effective_chat.type):
-            if b_update_msg:
-                if update.callback_query is not None:
-                    await update.callback_query.answer()
-                    if buttons_inline is not None:
-                        await update.callback_query.edit_message_text(text=text,
-                                                                      reply_markup=InlineKeyboardMarkup(buttons_inline))
-                    else:
-                        await update.callback_query.edit_message_text(text=text)
-                else:
-                    msg_id = context.user_data['last_message_id']
-                    if buttons_inline is not None:
-                        await context.bot.edit_message_text(text=text, message_id=msg_id, chat_id=update.effective_chat.id,
-                                                            reply_markup=InlineKeyboardMarkup(buttons_inline))
-                    else:
-                        await context.bot.edit_message_text(text=text, message_id=msg_id, chat_id=update.effective_chat.id)
-            else:
-                msg = None
+        if b_update_msg:
+            if update.callback_query is not None:
+                await update.callback_query.answer()
                 if buttons_inline is not None:
-                    msg = await context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        text=text,
-                        reply_markup=InlineKeyboardMarkup(buttons_inline)
-                    )
+                    await update.callback_query.edit_message_text(text=text,
+                                                                  reply_markup=InlineKeyboardMarkup(buttons_inline))
                 else:
-                    msg = context.user_data['last_message_id'] = await context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        text=text
-                    )
-                if msg is not None:
-                    context.user_data['last_message_id'] = msg.message_id
+                    await update.callback_query.edit_message_text(text=text)
+            else:
+                msg_id = context.user_data['last_message_id']
+                if buttons_inline is not None:
+                    await context.bot.edit_message_text(text=text, message_id=msg_id, chat_id=update.effective_chat.id,
+                                                        reply_markup=InlineKeyboardMarkup(buttons_inline))
+                else:
+                    await context.bot.edit_message_text(text=text, message_id=msg_id, chat_id=update.effective_chat.id)
+        else:
+            msg = None
+            if buttons_inline is not None:
+                msg = await context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=text,
+                    reply_markup=InlineKeyboardMarkup(buttons_inline)
+                )
+            else:
+                msg = context.user_data['last_message_id'] = await context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=text
+                )
+            if msg is not None:
+                context.user_data['last_message_id'] = msg.message_id
 
     async def ask_for_target_field(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not b_is_valid_group_chat(update.effective_chat.type):
@@ -210,7 +211,7 @@ class BirthdaysKeeper:
 
         page = context.user_data['listing-page']
 
-        cutoff = get_cutoff(len(chats), self.users_page_size, page)
+        cutoff = get_cutoff(len(chats[int(chat_id)].users_list), self.users_page_size, page)
         begin_user = 0
         if page != 0:
             begin_user = page * self.users_page_size - 1
@@ -462,7 +463,7 @@ class BirthdaysKeeper:
         chat = context.user_data['user-chats'][int(chat_id)]
         collected_input = update.callback_query.data.replace("sul_select_", "")
 
-        if collected_input not in chat.users_list:
+        if int(collected_input) not in chat.users_list:
             await self.call_scope_function(update, context)
 
             return 1
@@ -950,7 +951,7 @@ class BirthdaysKeeper:
             if birthday.b_is_beep_required:
                 await self.beep_birthday(context, birthday, birthday_id)
             if birthday.b_is_beep_to_group_required:
-                await self.congrats_birthday(birthday.target_chat, birthday)
+                await self.congrats_birthday(context, birthday)
 
     async def beep_birthday(self, context, birthday: Birthday, birthday_id: int):
         chat_id = ""
@@ -967,16 +968,24 @@ class BirthdaysKeeper:
 
         if birthday.b_is_beep_to_group_required:
             beep_message_to_chat = self._data_table.get_local("beep-to-user-format").format(birthday.name,
-                                                                                            birthday.beep_interval)
+                                                                                            birthday.date.isoformat()) + \
+                                   beep_local[birthday.beep_interval]
+
             await context.bot.send_message(
                 chat_id=birthday.target_chat,
                 text=beep_message_to_chat
             )
 
     async def congrats_birthday(self, context: ContextTypes.DEFAULT_TYPE, birthday: Birthday):
+        msg_user = birthday.congrats_target_user_id
+
+        user = self._data_table.get_user(birthday.congrats_target_user_id)
+        if user is not None:
+            msg_user = user.name
+
         msg = await context.bot.send_message(
             chat_id=birthday.target_chat,
-            text=birthday.congrats_message.format(name=birthday.congrats_target_user_id)
+            text=birthday.congrats_message.format(name=msg_user)
         )
         context.user_data['last_message_id'] = msg.message_id
 
@@ -990,7 +999,8 @@ class BirthdaysKeeper:
         self.users_page_size = self._data_table.get_setting("users_page_size", 5)
         self.birthdays_page_size = self._data_table.get_setting("birthdays_page_size", 5)
 
-        application.job_queue.run_daily(self.birthdays_beep, time=datetime.time(hour=12))
+        #application.job_queue.run_daily(self.birthdays_beep, time=datetime.time(hour=12))
+        application.job_queue.run_once(self.birthdays_beep, when=timedelta(seconds=5))
 
         collect_field_handlers = [
             MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_field_input),

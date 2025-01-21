@@ -3,6 +3,8 @@
     "locals": {
       "handshake-chat": "hello there, fellow!",
       "handshake-group": "hello there, fellows!",
+      "main-conversation-loop": "main-conv",
+      "main-conversation-loop-group": "main-conv",
       "default-command-list": "/start,/reg_chat,/add_birthday,/adjust_birthday,/remove_birthday",
       "reg-chat-twice": "this chat already registered",
       "reg-chat-info": "type /reg_chat to add chats to moderating list",
