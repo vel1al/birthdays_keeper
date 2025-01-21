@@ -8,31 +8,31 @@ class IDataTable:
 
     @classmethod
     @abstractmethod
-    def add_new_chat(self, chat_id, chat: GroupChat) -> None:
+    def add_new_chat(self, chat_id: int, chat: GroupChat) -> None:
         pass
     @classmethod
     @abstractmethod
-    def add_user_to_chat(self, chat_id: str, user_id: str, user: User = None) -> bool:
+    def add_user_to_chat(self, chat_id: int, user_id: int, user: User = None) -> bool:
         pass
     @classmethod
     @abstractmethod
-    def remove_user_from_chat(self, chat_id: str, user_id: str) -> None:
+    def remove_user_from_chat(self, chat_id: int, user_id: int) -> None:
         pass
     @classmethod
     @abstractmethod
-    def change_user_chat_status(self, chat_id: str, user_id: str, b_is_admin: bool) -> None:
+    def change_user_chat_status(self, chat_id: int, user_id: int, b_is_admin: bool) -> None:
         pass
     @classmethod
     @abstractmethod
-    def get_chats_containing_user(self, user_id: str) -> dict[str, GroupChat]:
+    def get_chats_containing_user(self, user_id: int) -> dict[int, GroupChat]:
         pass
     @classmethod
     @abstractmethod
-    def get_chat_by_id(self, chat_id: str) -> GroupChat:
+    def get_chat_by_id(self, chat_id: int) -> GroupChat:
         pass
     @classmethod
     @abstractmethod
-    def get_chat_id_by_user_id(self, user_id: str) -> str:
+    def get_chat_id_by_user_id(self, user_id: int) -> int:
         pass
 
     @classmethod
@@ -54,36 +54,36 @@ class IDataTable:
 
     @classmethod
     @abstractmethod
-    def add_new_user(self, user_id: str, user: User) -> None:
+    def add_new_user(self, user_id: int, user: User) -> None:
         pass
     @classmethod
     @abstractmethod
-    def get_user(self, user_id: str) -> User:
+    def get_user(self, user_id: int) -> User:
         pass
     @classmethod
     @abstractmethod
-    def adjust_user_field(self, user_id: str, field: str, value) -> None:
+    def adjust_user_field(self, user_id: int, field: str, value) -> None:
         pass
     @classmethod
     @abstractmethod
-    def rewrite_user(self, user_id: str, user: User) -> None:
+    def rewrite_user(self, user_id: int, user: User) -> None:
         pass
 
     @classmethod
     @abstractmethod
-    def add_birthday(self, owner_id: str, birthday_id, birthday: Birthday) -> None:
+    def add_birthday(self, owner_id: int, birthday_id: int, birthday: Birthday) -> None:
         pass
     @classmethod
     @abstractmethod
-    def remove_birthday(self, birthday_id: str) -> None:
+    def remove_birthday(self, birthday_id: int) -> None:
         pass
     @classmethod
     @abstractmethod
-    def rewrite_birthday(self, birthday_id: str, birthday: Birthday) -> None:
+    def rewrite_birthday(self, birthday_id: int, birthday: Birthday) -> None:
         pass
     @classmethod
     @abstractmethod
-    def adjust_birthday_field(self, birthday_id: str, field: str, value) -> None:
+    def adjust_birthday_field(self, birthday_id: int, field: str, value) -> None:
         pass
     @classmethod
     @abstractmethod
@@ -91,9 +91,9 @@ class IDataTable:
         pass
     @classmethod
     @abstractmethod
-    def get_birthday_by_date(self, date: datetime) -> dict[str, Birthday]:
+    def get_birthday_by_date(self, date: datetime) -> dict[int, Birthday]:
         pass
     @classmethod
     @abstractmethod
-    def get_birthday_owner(self, birthday_id: str) -> User:
+    def get_birthday_owner(self, birthday_id: int) -> User:
         pass

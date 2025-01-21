@@ -7,6 +7,7 @@ from structs import BeepInterval, Birthday, User, GroupChat
 from interfaces import IDataTable
 from typing import Any
 
+
 class StructsEncoder(json.JSONEncoder):
     def default(self, obj):
         try:
@@ -106,12 +107,13 @@ class JsonDataTable(IDataTable):
         self.read_locals()
         self.read_settings()
 
-    def write_changes(self, func):
-        async def wrapper():
-            output = await func()
+    def write_changes(func):
+        def wrapper(self, *args, **kwargs):
+            output = func(self, *args, **kwargs)
             with open(self._json_path + self._table_file, 'w') as ostream:
                 json.dump(self._table, ostream, cls=StructsEncoder)
             return output
+
         return wrapper
 
     def get_setting(self, target_setting: str, hard_def: Any) -> Any:
@@ -120,41 +122,42 @@ class JsonDataTable(IDataTable):
 
         return hard_def
 
-    def get_user(self, user_id: str) -> User:
-        return self._table['users_list'].get(user_id, None)
+    def get_user(self, user_id: int) -> User:
+        return self._table['users_list'].get(str(user_id), None)
 
-    def get_chats_containing_user(self, user_id: str) -> dict[str, GroupChat]:
+    def get_chats_containing_user(self, user_id: int) -> dict[int, GroupChat]:
         output = {}
         for chat_id, chat in self._table['group_chats'].items():
-            if user_id in chat.users_list:
-                output[chat_id] = chat
+            if str(user_id) in chat.users_list:
+                output[int(chat_id)] = chat
 
-        if output is not {}:
+        if output:
             return output
         return None
 
-    def get_chat_by_id(self, chat_id: str) -> GroupChat:
-        return self._table['group_chats'].get(chat_id, None)
+    def get_chat_by_id(self, chat_id: int) -> GroupChat:
+        return self._table['group_chats'].get(str(chat_id), None)
 
-    def get_chat_id_by_user_id(self, user_id) -> str:
+    def get_chat_id_by_user_id(self, user_id) -> int:
         user = self.get_user(user_id)
         if user:
             return user.chat_id
         return None
 
-    def get_birthday_by_id(self, birthday_id: str) -> Birthday:
-        return self._table['birthdays'].get(birthday_id, None)
+    def get_birthday_by_id(self, birthday_id: int) -> Birthday:
+        return self._table['birthdays'].get(str(birthday_id), None)
 
     def get_birthday_by_date(self, target_date: datetime.date) -> dict[str, Birthday]:
         output = {}
         for birthday_id, birthday in self._table['birthdays'].items():
             if birthday:
-                if target_date == birthday.date:
-                    output[birthday_id] = birthday
+                if (target_date.month == birthday.date.month
+                        and target_date.day == birthday.date.day):
+                    output[int(birthday_id)] = birthday
 
         return output
 
-    def get_birthday_owner(self, birthday_id: str) -> User:
+    def get_birthday_owner(self, birthday_id: int) -> User:
         for user_id, user in self._table['users_list'].items():
             if birthday_id in user.owning_birthdays_id:
                 return user
@@ -175,7 +178,7 @@ class JsonDataTable(IDataTable):
         if language in self._locals:
             target_lang = language
 
-        button_list = self._locals[target_lang]['buttons']['invalid-state']
+        buttons_list = self._locals[target_lang]['buttons']['invalid-state']
         if button in self._locals[target_lang]['buttons']:
             buttons_list = self._locals[target_lang]['buttons'][button]
 
@@ -199,16 +202,16 @@ class JsonDataTable(IDataTable):
         return self._locals[target_lang]['buttons']['invalid-state']
 
     @write_changes
-    def add_new_user(self, user_id: str, user: User) -> None:
-        self._table['users_list'][user_id] = user
+    def add_new_user(self, user_id: int, user: User) -> None:
+        self._table['users_list'][str(user_id)] = user
 
     @write_changes
-    def add_new_chat(self, chat_id: str, chat: GroupChat) -> None:
-        self._table['group_chats'][chat_id] = chat
+    def add_new_chat(self, chat_id: int, chat: GroupChat) -> None:
+        self._table['group_chats'][str(chat_id)] = chat
 
     @write_changes
-    def add_user_to_chat(self, chat_id: str, user_id: str, user: User = None) -> bool:
-        if user_id not in self._table['users_list']:
+    def add_user_to_chat(self, chat_id: int, user_id: int, user: User = None) -> bool:
+        if str(user_id) not in self._table['users_list']:
             if user is not None:
                 self.add_new_user(user_id, user)
             else:
@@ -222,43 +225,43 @@ class JsonDataTable(IDataTable):
         return True
 
     @write_changes
-    def add_birthday(self, owner_id: str, birthday_id: str, birthday: Birthday):
+    def add_birthday(self, owner_id: int, birthday_id: int, birthday: Birthday):
         user = self.get_user(owner_id)
         if user:
             user.owning_birthdays_id.append(birthday_id)
-            self._table['birthdays'][birthday_id] = birthday
+            self._table['birthdays'][str(birthday_id)] = birthday
             self.rewrite_user(owner_id, user)
 
     @write_changes
-    def remove_birthday(self, birthday_id: str):
-        if birthday_id in self._table['birthdays']:
+    def remove_birthday(self, birthday_id: int):
+        if str(birthday_id) in self._table['birthdays']:
             self._table['birthdays'].pop(birthday_id)
 
         for user_id, user in self._table['users_list']:
-            if birthday_id in user.owning_birthdays_id:
-                self._table['users_list'][user_id].owning_birthdays.remove(birthday_id)
+            if str(birthday_id) in user.owning_birthdays_id:
+                self._table['users_list'][str(user_id)].owning_birthdays.remove(str(birthday_id))
                 break
 
     @write_changes
-    def remove_user_from_chat(self, chat_id: str, user_id: str) -> None:
+    def remove_user_from_chat(self, chat_id: int, user_id: int) -> None:
         chat = self.get_chat_by_id(chat_id)
         if chat is None:
             return
 
-        if user_id in chat.users_list:
+        if str(user_id) in chat.users_list:
             chat.users_list.remove(user_id)
-        if user_id in chat.admins_id:
+        if str(user_id) in chat.admins_id:
             chat.admins_id.remove(user_id)
 
     @write_changes
-    def adjust_birthday_field(self, birthday_id: str, field: str, value) -> None:
+    def adjust_birthday_field(self, birthday_id: int, field: str, value) -> None:
         birthday = self.get_birthday_by_id(birthday_id)
         if birthday:
             if hasattr(birthday, field):
                 setattr(birthday, field, value)
 
     @write_changes
-    def adjust_user_field(self, user_id: str, field: str, value) -> None:
+    def adjust_user_field(self, user_id: int, field: str, value) -> None:
         user = self.get_user(user_id)
         if user:
             if hasattr(user, field):
@@ -266,22 +269,22 @@ class JsonDataTable(IDataTable):
 
     @write_changes
     def rewrite_birthday(self, birthday_id: str, birthday: Birthday) -> None:
-        if birthday_id in self._table['birthdays']:
+        if str(birthday_id) in self._table['birthdays']:
             self._table['birthdays'][birthday_id] = birthday
 
     @write_changes
-    def rewrite_user(self, user_id: str, user: User) -> None:
+    def rewrite_user(self, user_id: int, user: User) -> None:
         self.add_new_user(user_id, user)
 
     @write_changes
-    def change_user_chat_status(self, chat_id: str, user_id: str, b_is_admin: bool) -> None:
+    def change_user_chat_status(self, chat_id: int, user_id: int, b_is_admin: bool) -> None:
         chat = self.get_chat_by_id(chat_id)
         if chat is None:
             return
-        if user_id not in chat.users_list:
+        if str(user_id) not in chat.users_list:
             return
 
         if b_is_admin and user_id not in chat.admins_id:
             chat.admins_id.append(user_id)
-        elif  user_id in chat.admins_id:
+        elif str(user_id) in chat.admins_id:
             chat.admins_id.remove(user_id)

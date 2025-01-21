@@ -13,7 +13,12 @@
       "add-birthday-success": "added",
       "add-birthday-adjust": "choose field",
       "add-birthday-cancel": "canceled",
-      "chat-list-line-format": "chat: {0}",
+      "add-birthday-empty-chats": "sorry, you dont have any chats",
+      "chat-list-line-format": "- {0}\n",
+      "chat-list-title-format": "chats({0}/{1}):\n",
+      "users-list-title-format": "{0}:\n users({1}/{2}):\n",
+      "users-list-line-format": "- {0} ({1})\n",
+      "users-list-line-admin-format": "- *{0} ({1})\n",
       "get-name": "awaiting for name",
       "get-bool-value": "awaiting for yes/no",
       "get-date": "awaiting for date in iso (yyyy-mm-dd)",
@@ -21,7 +26,7 @@
       "get-beep-to-chat-required": "awaiting for beep required",
       "get-beep-to-group-required": "awaiting for beep to group required",
       "get-congrats-required": "awaiting for congrats from bot required",
-      "get-congrats-message": "awaiting for congrats message",
+      "get-congrats-message": "awaiting for congrats message (including \"{name}\")",
       "get-target-user-id": "awaiting for congrats target",
       "get-name-invalid": "Invalid input, try again. awaiting for name",
       "get-bool-value-invalid": "Invalid input, try again. awaiting for yes/no",
@@ -41,7 +46,7 @@
       "invalid-input": "invalid value",
       "get-date-iso-error": "invalid iso",
       "no-rights": "sorry, you have no rights to do this",
-      "invalid-state": "something fucked up, please, restart bot!",
+      "invalid-state": "nigga issue! please, restart bot",
       "invalid-chat-type": "sorry, this command not supported in this type of chats",
       "reg-user-success": "registered",
       "reg-user-failure": "fucked up",
@@ -78,7 +83,7 @@
           },
           {
             "text": "Cancel",
-            "callback": "ab_ac_cancel"
+            "callback": "cancel"
           }
         ]
       ],
@@ -190,71 +195,69 @@
         [
           {
             "text": "back",
-            "callback": "scl_back"
-          },
-          {
-            "text": "inspect",
-            "callback": "scl_inspect"
+            "callback": "page_back"
           },
           {
             "text": "next",
-            "callback": "scl_next"
-          }
-        ],
-        [
-          {
-            "text": "cancel",
-            "callback": "back"
+            "callback": "page_next"
           }
         ],
         [
           {
             "text": "select",
             "callback": "scl_select"
+          },
+          {
+            "text": "inspect",
+            "callback": "scl_inspect"
+          }
+        ],
+        [
+          {
+            "text": "cancel",
+            "callback": "cancel"
           }
         ]
       ],
       "show-chats-list-one-page": [
         [
           {
+            "text": "select",
+            "callback": "scl_select"
+          },
+          {
             "text": "inspect",
             "callback": "scl_inspect"
           }
         ],
-        [
+                [
           {
             "text": "cancel",
-            "callback": "back"
-          }
-        ],
-        [
-          {
-            "text": "select",
-            "callback": "scl_select"
+            "callback": "cancel"
           }
         ]
       ],
       "show-chats-list-first-page": [
         [
           {
-            "text": "inspect",
-            "callback": "scl_inspect"
-          },
-          {
             "text": "next",
-            "callback": "scl_next"
-          }
-        ],
-        [
-          {
-            "text": "cancel",
-            "callback": "back"
+            "callback": "page_next"
           }
         ],
         [
           {
             "text": "select",
             "callback": "scl_select"
+          },
+          {
+            "text": "inspect",
+            "callback": "scl_inspect"
+          }
+        ],
+        [
+          {
+            "text": "cancel",
+            "callback": "cancel"
           }
         ]
       ],
@@ -262,7 +265,13 @@
         [
           {
             "text": "back",
-            "callback": "scl_back"
+            "callback": "page_back"
+          }
+        ],
+        [
+          {
+            "text": "select",
+            "callback": "scl_select"
           },
           {
             "text": "inspect",
@@ -272,13 +281,85 @@
         [
           {
             "text": "cancel",
-            "callback": "back"
+            "callback": "cancel"
+          }
+        ]
+      ],
+      "show-users-list": [
+        [
+          {
+            "text": "back",
+            "callback": "page_back"
+          },
+          {
+            "text": "next",
+            "callback": "page_next"
           }
         ],
         [
           {
             "text": "select",
-            "callback": "scl_select"
+            "callback": "sul_select"
+          }
+        ],
+        [
+          {
+            "text": "back",
+            "callback": "back"
+          }
+        ]
+      ],
+      "show-users-list-one-page": [
+        [
+          {
+            "text": "select",
+            "callback": "sul_select"
+          }
+        ],
+        [
+          {
+            "text": "back",
+            "callback": "back"
+          }
+        ]
+      ],
+      "show-users-list-first-page": [
+        [
+          {
+            "text": "next",
+            "callback": "page_next"
+          }
+        ],
+        [
+          {
+            "text": "select",
+            "callback": "sul_select"
+          }
+        ],
+        [
+          {
+            "text": "back",
+            "callback": "back"
+          }
+        ]
+      ],
+      "show-users-list-last-page": [
+        [
+          {
+            "text": "back",
+            "callback": "page_back"
+          }
+        ],
+        [
+          {
+            "text": "select",
+            "callback": "sul_select"
+          }
+        ],
+        [
+          {
+            "text": "back",
+            "callback": "back"
           }
         ]
       ],
@@ -287,14 +368,6 @@
           {
             "text": "back",
             "callback": "back"
-          }
-        ]
-      ],
-      "temp": [
-        [
-          {
-            "text": "show",
-            "callback": "scl_s"
           }
         ]
       ]

@@ -1,43 +1,6 @@
 from datetime import datetime
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 import enum
-from typing import Any, Optional
-
-"""
-[r] - required, [o] - optional
-
-birthdays.json:
--birthdays:
-    -birthday_id -> uuid:
-        -birthday_name -> str [r]                -name of event
-        -b_is_chat_event -> bool [r]             -is birthday target is group chat    
-        -date -> datetime: [r]
-                                                        
-        -beep_interval -> enum [o]               -interval of remind events
-        -b_is_beep_required -> bool [r]          -is reminding required
-        -b_is_beep_to_group_required -> bool [o] -is reminding to chat required
-        
-        -b_is_congrats_required -> bool [o]      -is congrats to chat required
-        -congrats_target_user_id -> str [o]      -congratulations target user id                
-        -congrats_message -> str [o]             -congratulations message       
-                        
-        -target_chat -> str [o]                  -congratulations target chat id
-        
--group_chats:
-    -chat_id -> str:
-        -user_list -> list:
-            -user_id -> str [r]
-
--users_list
-    -user_id -> str:
-        -owning_birthdays_id -> uuid [r]
-        -chat_id -> str [r]
-
-locals:
--langs -> str:
-    -local_name -> str:
-        -local_str -> str [r]
-"""
 
 
 class CollectingFieldsState:
@@ -87,9 +50,10 @@ class DefaultField:
 
 class User(DefaultField):
     def __init__(self, values: dict = None):
-        self.owning_birthdays_id: list[str] = []
-        self.chat_id: str = None
+        self.owning_birthdays_id: list[int] = []
+        self.chat_id: int = None
         self.name: str = None
+        self.language: str = None
 
         if values:
             super().__init__(values)
@@ -97,8 +61,8 @@ class User(DefaultField):
 
 class GroupChat(DefaultField):
     def __init__(self, values: dict = None):
-        self.users_list: list[str] = []
-        self.admins_id: list[str] = None
+        self.users_list: list[int] = []
+        self.admins_id: list[int] = None
         self.title: str = None
 
         if values:
@@ -114,8 +78,8 @@ class Birthday(DefaultField):
         self.b_is_beep_to_group_required: bool = False
         self.b_is_congrats_required: bool = False
         self.b_is_chat_event: bool = False
-        self.target_chat: str = None
-        self.congrats_target_user_id: str = None
+        self.target_chat: int = None
+        self.congrats_target_user_id: int = None
         self.congrats_message: str = None
 
         if values:
