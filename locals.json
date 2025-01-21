@@ -19,6 +19,9 @@
       "users-list-title-format": "{0}:\n users({1}/{2}):\n",
       "users-list-line-format": "- {0} ({1})\n",
       "users-list-line-admin-format": "- *{0} ({1})\n",
+      "birthdays-list-line-format": "- {0} ({1})\n",
+      "birthdays-list-title-format": "birthdays({0}/{1}):\n",
+      "beep-to-user-format": "{0} ({1}) gonna hit",
       "get-name": "awaiting for name",
       "get-bool-value": "awaiting for yes/no",
       "get-date": "awaiting for date in iso (yyyy-mm-dd)",
@@ -363,11 +366,101 @@
           }
         ]
       ],
+      "show-birthdays-list": [
+        [
+          {
+            "text": "back",
+            "callback": "page_back"
+          },
+          {
+            "text": "next",
+            "callback": "page_next"
+          }
+        ],
+        [
+          {
+            "text": "inspect",
+            "callback": "sbl_inspect"
+          }
+        ],
+        [
+          {
+            "text": "back",
+            "callback": "back"
+          }
+        ]
+      ],
+      "show-birthdays-list-one-page": [
+        [
+          {
+            "text": "inspect",
+            "callback": "sbl_inspect"
+          }
+        ],
+        [
+          {
+            "text": "back",
+            "callback": "back"
+          }
+        ]
+      ],
+      "show-birthdays-list-first-page": [
+        [
+          {
+            "text": "next",
+            "callback": "page_next"
+          }
+        ],
+        [
+          {
+            "text": "inspect",
+            "callback": "sbl_inspect"
+          }
+        ],
+        [
+          {
+            "text": "back",
+            "callback": "back"
+          }
+        ]
+      ],
+      "show-birthdays-list-last-page": [
+        [
+          {
+            "text": "back",
+            "callback": "page_back"
+          }
+        ],
+        [
+          {
+            "text": "inspect",
+            "callback": "sbl_inspect"
+          }
+        ],
+        [
+          {
+            "text": "back",
+            "callback": "back"
+          }
+        ]
+      ],
       "inspect-chat": [
         [
           {
             "text": "back",
             "callback": "back"
+          }
+        ]
+      ],
+      "inspect-birthday": [
+        [
+          {
+            "text": "back",
+            "callback": "back"
+          },
+          {
+            "text": "adjust",
+            "callback": "sbl_adjust"
           }
         ]
       ]

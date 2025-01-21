@@ -51,7 +51,7 @@ def b_is_valid_group_chat(chat_type: str) -> bool:
 def get_cutoff(list_len: int, page_size: int, page: int) -> int:
     cutoff = page_size
     if list_len < page_size:
-        cutoff = list_len + 1
+        cutoff = list_len
     else:
         diff = list_len - page * page_size
         if diff < 0 and abs(diff) > page_size:

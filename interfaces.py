@@ -87,7 +87,7 @@ class IDataTable:
         pass
     @classmethod
     @abstractmethod
-    def get_birthdays_by_id(self, birthday_id: str) -> Birthday:
+    def get_birthday_by_id(self, birthday_id: int) -> Birthday:
         pass
     @classmethod
     @abstractmethod

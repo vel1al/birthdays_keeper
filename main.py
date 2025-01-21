@@ -246,6 +246,28 @@ class BirthdaysKeeper:
         keyboard = dict_to_inline_keyboard(keyboard_dict)
         await self.send_message_checked(update, context, text="select_chat", buttons_inline=keyboard, b_update_msg=True)
 
+    async def ask_for_birthday(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        user = self._data_table.get_user(update.effective_user.id)
+        if user is None:
+            return
+        birthdays = user.owning_birthdays_id
+
+        page = context.user_data['listing-page']
+        cutoff = get_cutoff(len(birthdays), self.birthdays_page_size, page)
+
+        begin_birthday = 0
+        if page != 0:
+            begin_birthday = page * self.birthdays_page_size - 1
+
+        keyboard_dict = [[]]
+        for birthday_id in birthdays:
+            birthday = self._data_table.get_birthday_by_id(birthday_id)
+            if birthday is not None:
+                keyboard_dict.append([{"text": birthday.name, "callback": ("sbl_select_" + str(birthday_id))}])
+
+        keyboard = dict_to_inline_keyboard(keyboard_dict)
+        await self.send_message_checked(update, context, text="select_birthday", buttons_inline=keyboard, b_update_msg=True)
+
     async def ask_for_adjusting_field(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['input_field'] = update.callback_query.data
         logger.info("collected field %s from %s user", update.callback_query.data, str(update.effective_user.id))
@@ -263,7 +285,7 @@ class BirthdaysKeeper:
         await self.send_message_checked(update, context, message_local="add-birthday-validate-birthday-loop",
                                         buttons_inline=keyboard)
 
-    def format_chats_list_str(self, chats: dict[str, GroupChat], page: int) -> str:
+    def format_chats_list_str(self, chats: dict[int, GroupChat], page: int) -> str:
         cutoff = get_cutoff(len(chats), self.chats_page_size, page)
         begin_chat = 0
         if page != 0:
@@ -292,6 +314,23 @@ class BirthdaysKeeper:
                         msg += line_format_admin.format(user.name, user_id)
                     else:
                         msg += line_format.format(user.name, user_id)
+
+        return msg
+
+    def format_birthdays_list_str(self, user: User, page: int) -> str:
+        birthdays = user.owning_birthdays_id
+        cutoff = get_cutoff(len(birthdays), self.birthdays_page_size, page)
+        begin_birthday = 0
+        if page != 0:
+            begin_birthday = page * self.birthdays_page_size - 1
+
+        msg = self._data_table.get_local("birthdays-list-title-format").format(page, len(birthdays)//self.birthdays_page_size)
+        line_format = self._data_table.get_local("birthdays-list-line-format")
+        if line_format is not None:
+            for birthday_id in birthdays[begin_birthday:begin_birthday + cutoff]:
+                birthday = self._data_table.get_birthday_by_id(birthday_id)
+                if birthday is not None:
+                    msg += line_format.format(birthday.name, birthday.date)
 
         return msg
 
@@ -343,6 +382,40 @@ class BirthdaysKeeper:
 
         keyboard = dict_to_inline_keyboard(self._data_table.get_buttons_inline(button=keyboard_local))
         await self.send_message_checked(update, context, text=msg, buttons_inline=keyboard, b_update_msg=True)
+
+    async def show_birthdays_list_loop(self, update: Update, context: ContextTypes):
+        user = self._data_table.get_user(update.effective_user.id)
+        if user is None:
+            return
+
+        birthday_ids = user.owning_birthdays_id
+        context.user_data['fallback-state'] = -1
+
+        page = context.user_data['listing-page']
+        msg = self.format_birthdays_list_str(user, page)
+
+        keyboard_local = "show-birthdays-list"
+        if len(birthday_ids) < self.birthdays_page_size:
+            keyboard_local = "show-birthdays-list-one-page"
+        elif page == 0:
+            keyboard_local = "show-birthdays-list-first-page"
+        else:
+            diff = len(birthday_ids) - page * self.birthdays_page_size
+            if diff < 0:
+                return ""
+            elif diff < self.users_page_size:
+                keyboard_local = "show-birthdays-list-last-page"
+
+        keyboard = dict_to_inline_keyboard(self._data_table.get_buttons_inline(button=keyboard_local))
+        await self.send_message_checked(update, context, text=msg, buttons_inline=keyboard, b_update_msg=True)
+
+    async def show_birthdays_list(self, update: Update, context: ContextTypes):
+        context.user_data['listing-page'] = 0
+        context.user_data['inspecting_birthday'] = False
+        await self.show_birthdays_list_loop(update, context)
+        self.add_scope_function(update, context, self.show_birthdays_list_loop)
+
+        return 3
 
     async def show_users_list(self, update: Update, context: ContextTypes):
         context.user_data['listing-page'] = 0
@@ -453,6 +526,7 @@ class BirthdaysKeeper:
 
         return 3
 
+
     @validate_input(["next", "n"], "page_", 1, show_chats_list_loop)
     async def handle_next_page(self, update: Update, context: ContextTypes.DEFAULT_TYPE, checked_input: str = None):
         context.user_data['listing-page'] += 1
@@ -473,9 +547,61 @@ class BirthdaysKeeper:
     @validate_input(["inspect", "i"], "scl_", 1, show_chats_list_loop)
     async def handle_inspect_chat(self, update: Update, context: ContextTypes.DEFAULT_TYPE, checked_input: str = None):
         await self.ask_for_chat(update, context)
-        context.user_data['listing-page'] = 1
+        context.user_data['listing-page'] = 0
 
         return 2
+
+    async def inspect_birthday_loop(self, update, context):
+        birthday_id = context.user_data['inspecting_birthday']
+        if context.user_data['b_is_birthday_edited'] == False:
+            birthday = self._data_table.get_birthday_by_id(int(birthday_id))
+
+            if birthday is not None:
+                msg = self.format_validate_birthday_message(birthday)
+                keyboard = dict_to_inline_keyboard(self._data_table.get_buttons_inline("inspect-birthday"))
+                await self.send_message_checked(update, context, text=msg, buttons_inline=keyboard, b_update_msg=True)
+
+                self._birthdays_blanks[update.effective_user.id] = birthday
+
+        else:
+            birthday = self._birthdays_blanks[update.effective_user.id]
+            self._data_table.rewrite_birthday(birthday_id, birthday)
+
+            msg = self.format_validate_birthday_message(birthday)
+            keyboard = dict_to_inline_keyboard(self._data_table.get_buttons_inline("inspect-birthday"))
+            await self.send_message_checked(update, context, text=msg, buttons_inline=keyboard,
+                                            b_update_msg=True)
+
+        return 4
+
+    @validate_input(["inspect", "i"], "sbl_", 1, show_birthdays_list_loop)
+    async def handle_inspect_birthday(self, update: Update, context: ContextTypes.DEFAULT_TYPE, checked_input: str = None):
+        self.add_scope_function(update, context, self.inspect_birthday_loop)
+        await self.ask_for_birthday(update, context)
+        context.user_data['listing-page'] = 0
+        context.user_data['fallback-state'] = 2
+        context.user_data['b_is_input_valid'] = True
+        context.user_data['b_is_birthday_edited'] = False
+
+        return 1
+
+    @validate_input(["adjust", "a"], "sbl_", 1, show_birthdays_list_loop)
+    async def handle_adjust_birthday(self, update: Update, context: ContextTypes.DEFAULT_TYPE, checked_input: str = None):
+        context.user_data['listing-page'] = 0
+        context.user_data['b_is_birthday_edited'] = True
+
+        await self.ask_for_target_field(update, context)
+
+        return 3
+
+    # @validate_input(["save", "s"], "sbl_", 1, show_birthdays_list_loop)
+    # async def handle_save_birthday(self, update: Update, context: ContextTypes.DEFAULT_TYPE, checked_input: str = None):
+    #     context.user_data['listing-page'] = 0
+    #
+    #     self._data_table.rewrite_birthday(context.user_data['inspecting_birthday'], self._data_table.get_birthday_by_id(context.user_data['inspecting_birthday']))
+    #     await self.call_scope_function(update, context)
+    #
+    #     return 1
 
     async def handle_field_input(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         end_state = 1
@@ -545,6 +671,8 @@ class BirthdaysKeeper:
                     await self.send_message_checked(update, context, message_local="reg-user-failure")
             else:
                 await self.send_message_checked(update, context, message_local="reg-user-redefinition")
+        else:
+            await self.send_message_checked(update, context, message_local="reg-user-invalid-chat-type")
 
     async def handle_chat_members_update(self, update: Update, context: CallbackContext):
         if b_is_valid_group_chat(update.chat_member.chat.type):
@@ -583,6 +711,22 @@ class BirthdaysKeeper:
                 await self.show_users_list(update, context)
 
                 return 4
+
+    async def inspect_birthday(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        if update.callback_query is not None:
+            user = self._data_table.get_user(update.effective_user.id)
+            if user is not None:
+                birthdays = user.owning_birthdays_id
+
+                collected_input = update.callback_query.data.replace("sbl_select_", "")
+                if int(collected_input) in birthdays:
+                    context.user_data['inspecting_birthday'] = collected_input
+                    await self.inspect_birthday_loop(update, context)
+
+                    return 4
+
+            await self.call_scope_function(update, context)
+            return 1
 
     async def show_chats_list(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.info("user %s called /show_chats", str(update.effective_user.id))
@@ -756,6 +900,7 @@ class BirthdaysKeeper:
     @validate_input(["adjust"], 'ab_ac_', 2, add_birthday_ask_action)
     async def adjust_field(self, update: Update, context: ContextTypes.DEFAULT_TYPE, checked_input: str = None):
         logger.info("user %s adjust birthday", str(update.effective_user.id))
+
         self.add_scope_function(update, context, self.add_birthday_ask_action)
 
         await self.send_message_checked(update, context, message_local="add-birthday-adjust")
@@ -813,22 +958,20 @@ class BirthdaysKeeper:
         if birthday_owner:
             chat_id = birthday_owner.chat_id
 
-        beep_message_to_user = self._data_table.get_local("beep-to-user-format").format(birthday.name,
-                                                                                        birthday.beep_interval)
-        msg = await context.bot.send_message(
+        beep_local = {BeepInterval.day: " tomorrow", BeepInterval.week: " in a week", BeepInterval.month: " in a month"}
+        beep_message_to_user = self._data_table.get_local("beep-to-user-format").format(birthday.name, birthday.date.isoformat()) + beep_local[birthday.beep_interval]
+        await context.bot.send_message(
             chat_id=chat_id,
             text=beep_message_to_user
         )
-        context.user_data['last_message_id'] = msg.message_id
 
         if birthday.b_is_beep_to_group_required:
-            beep_message_to_chat = self._data_table.get_local("beep-to-chat-format").format(birthday.name,
+            beep_message_to_chat = self._data_table.get_local("beep-to-user-format").format(birthday.name,
                                                                                             birthday.beep_interval)
-            msg = await context.bot.send_message(
+            await context.bot.send_message(
                 chat_id=birthday.target_chat,
                 text=beep_message_to_chat
             )
-            context.user_data['last_message_id'] = msg.message_id
 
     async def congrats_birthday(self, context: ContextTypes.DEFAULT_TYPE, birthday: Birthday):
         msg = await context.bot.send_message(
@@ -845,6 +988,7 @@ class BirthdaysKeeper:
         application = ApplicationBuilder().token(token).build()
         self.chats_page_size = self._data_table.get_setting("chats_page_size", 5)
         self.users_page_size = self._data_table.get_setting("users_page_size", 5)
+        self.birthdays_page_size = self._data_table.get_setting("birthdays_page_size", 5)
 
         application.job_queue.run_daily(self.birthdays_beep, time=datetime.time(hour=12))
 
@@ -873,6 +1017,17 @@ class BirthdaysKeeper:
             CallbackQueryHandler(self.handle_select_user, pattern="^sul_select"),
             CallbackQueryHandler(self.handle_scope_back, pattern="^back"),
             *page_control_handlers
+        ]
+
+        showing_birthdays_action_handlers = [
+            CallbackQueryHandler(self.handle_inspect_birthday, pattern="^sbl_inspect"),
+            CallbackQueryHandler(self.handle_scope_back, pattern="^back"),
+            *page_control_handlers
+        ]
+
+        inspecting_birthday_action_handlers = [
+            CallbackQueryHandler(self.handle_adjust_birthday, pattern="^sbl_adjust"),
+            CallbackQueryHandler(self.handle_scope_back, pattern="^back")
         ]
 
         showing_users_list = ConversationHandler(
@@ -914,7 +1069,20 @@ class BirthdaysKeeper:
                 4: [showing_users_list],
                 5: [showing_chats_list]
             },
-            map_to_parent={-1: 1, 1: 2, 2: 2, 10: 10},
+            map_to_parent={-1: 1, 1: 2, 2: 2, 4: 4, 10: 10},
+            fallbacks=[CallbackQueryHandler(self.handle_cancel, pattern="^cancel")]
+        )
+
+        show_birthdays  = CallbackQueryHandler(self.show_birthdays_list, pattern="sa_sbl")
+        showing_birthdays = ConversationHandler(
+            entry_points=showing_birthdays_action_handlers,
+            states={
+                2: showing_birthdays_action_handlers,
+                1: [CallbackQueryHandler(self.inspect_birthday, pattern="^sbl_select_")],
+                3: [adjusting_field],
+                4: inspecting_birthday_action_handlers
+            },
+            map_to_parent={-1: 0, 10: 0},
             fallbacks=[CallbackQueryHandler(self.handle_cancel, pattern="^cancel")]
         )
 
@@ -943,21 +1111,10 @@ class BirthdaysKeeper:
             fallbacks=[CallbackQueryHandler(self.handle_cancel, pattern="^cancel")]
         )
 
-        # show_birthdays = CallbackQueryHandler(self.show_birthdays_list, pattern="^sa_sbl")
-        # showing_birthdays = ConversationHandler(
-        #     entry_points=[collecting_fields],
-        #     states={
-        #
-        #     },
-        #     map_to_parent={-1: 0},
-        #     fallbacks=[]
-        # )
-
         select_action_handlers = [
             add_birthday_p,
             add_birthday_g,
-            #show_birthdays,
-            #show_chats
+            show_birthdays
         ]
 
         main_conv = ConversationHandler(
@@ -966,7 +1123,7 @@ class BirthdaysKeeper:
                 0: select_action_handlers,
                 1: [adding_birthday_p],
                 2: [adding_birthday_g],
-                #3: [showing_birthdays]
+                3: [showing_birthdays]
             },
             fallbacks=[],
             conversation_timeout=120

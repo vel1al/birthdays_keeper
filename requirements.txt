@@ -1,0 +1,3 @@
+python-telegram-bot==21.10
+python-telegram-bot[ext]==21.10
+python-telegram-bot[job-queue]==21.10

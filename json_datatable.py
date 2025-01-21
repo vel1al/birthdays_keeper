@@ -150,7 +150,7 @@ class JsonDataTable(IDataTable):
     def get_birthday_by_date(self, target_date: datetime.date) -> dict[str, Birthday]:
         output = {}
         for birthday_id, birthday in self._table['birthdays'].items():
-            if birthday:
+            if birthday and birthday_id != '00000000-0000-0000-0000-000000000000':
                 if (target_date.month == birthday.date.month
                         and target_date.day == birthday.date.day):
                     output[int(birthday_id)] = birthday
