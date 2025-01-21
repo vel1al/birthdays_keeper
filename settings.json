@@ -1,4 +1,6 @@
 {
   "chats_page_size": 5,
+  "users_page_size": 5,
+  "birthdays_page_size": 5,
   "token": "7984870379:AAFqIpOB7yDw-oHMFBe32aduJTmQpLuik6c"
 }
